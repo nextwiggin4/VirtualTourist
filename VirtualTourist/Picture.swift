@@ -12,6 +12,8 @@ import CoreData
 @objc(Picture)
 
 class Picture : NSManagedObject {
+    
+    // constants for parsing the incoming dictionary
     struct Keys {
         static let PicturePath = "url_m"
         static let Title = "title"
@@ -19,6 +21,7 @@ class Picture : NSManagedObject {
         static let Width = "width_m"
     }
     
+    //these are the variables that will be persisted
     @NSManaged var title: String
     @NSManaged var picturePath: String
     @NSManaged var height: NSNumber
@@ -29,6 +32,7 @@ class Picture : NSManagedObject {
         super.init(entity: entity, insertIntoManagedObjectContext: context)
     }
     
+    //recieve a dictionary of information and put them in thier appropriate variable location
     init(dictionary: [String : AnyObject], context: NSManagedObjectContext) {
         let entity = NSEntityDescription.entityForName("Picture", inManagedObjectContext: context)!
         super.init(entity: entity, insertIntoManagedObjectContext: context)
@@ -41,6 +45,7 @@ class Picture : NSManagedObject {
         width = mutableWidth.toInt()!
     }
     
+    //this allows you to simply get and set the UIImage as though it were stored in the picture object
     var pictureImage: UIImage? {
         
         get{

@@ -15,11 +15,7 @@ import MapKit
 class Pin : NSManagedObject {
     
     
-    struct Keys {
-        static let Latitude = "latitude"
-        static let Longitude = "longitude"
-    }
-    
+    // store the latitude, longitude of the Pin's location to be persisted
     @NSManaged var latitude: NSNumber!
     @NSManaged var longitude: NSNumber!
     @NSManaged var pictures: [Picture]
@@ -28,6 +24,7 @@ class Pin : NSManagedObject {
         super.init(entity: entity, insertIntoManagedObjectContext: context)
     }
     
+    // initialize the pin based on the longitude and latitude supplied at the 2D Coordinate.
     init(location: CLLocationCoordinate2D, context: NSManagedObjectContext) {
         let entity = NSEntityDescription.entityForName("Pin", inManagedObjectContext: context)!
         super.init(entity: entity, insertIntoManagedObjectContext: context)
@@ -35,11 +32,5 @@ class Pin : NSManagedObject {
         latitude = location.latitude
         longitude = location.longitude
     }
-   /*
-    var annotation: MKPointAnnotation {
-        var newPoint = MKPointAnnotation()
-        newPoint.coordinate = CLLocationCoordinate2D(latitude: CLLocationDegrees(latitude), longitude: CLLocationDegrees(longitude))
-        return newPoint
-    }
-    */
+
 }

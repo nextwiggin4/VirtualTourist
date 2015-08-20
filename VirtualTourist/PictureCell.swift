@@ -13,6 +13,7 @@ class PictureCell: UICollectionViewCell {
     @IBOutlet weak var flickrPictureView: UIImageView!
     @IBOutlet weak var downloadIndicator: UIActivityIndicatorView!
     
+    //this will let you set the UIImage of the cells, but if there is no image (it's nil) it'll return the posterPlaceHolder image instead.
     var flickrPicture: UIImage {
         set {
             self.flickrPictureView.image = newValue

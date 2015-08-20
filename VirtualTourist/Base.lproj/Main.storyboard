@@ -4,7 +4,7 @@
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="7703"/>
     </dependencies>
     <scenes>
-        <!--Map View Controller-->
+        <!--Virtual Tour-->
         <scene sceneID="ufC-wZ-h7g">
             <objects>
                 <viewController id="vXZ-lx-hvc" customClass="MapViewController" customModule="VirtualTourist" customModuleProvider="target" sceneMemberID="viewController">
@@ -33,9 +33,7 @@
                             <constraint firstItem="ZHx-Wc-U8Q" firstAttribute="top" secondItem="jyV-Pf-zRb" secondAttribute="bottom" id="s2S-Hc-VOj"/>
                         </constraints>
                     </view>
-                    <navigationItem key="navigationItem" id="6N7-ZV-FmB">
-                        <barButtonItem key="rightBarButtonItem" systemItem="edit" id="pV0-7a-npn"/>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" title="Virtual Tour" id="6N7-ZV-FmB"/>
                     <connections>
                         <outlet property="mapView" destination="ZHx-Wc-U8Q" id="3n1-5K-mJu"/>
                     </connections>
@@ -62,10 +60,13 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" mapType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="1hh-gS-nGq">
-                                <rect key="frame" x="0.0" y="20" width="600" height="196"/>
+                                <rect key="frame" x="0.0" y="20" width="600" height="180"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="180" id="lhs-Pa-0qZ"/>
+                                </constraints>
                             </mapView>
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="km8-7q-Ar6">
-                                <rect key="frame" x="0.0" y="200" width="600" height="400"/>
+                                <rect key="frame" x="0.0" y="200" width="600" height="356"/>
                                 <color key="backgroundColor" red="0.87843137250000003" green="0.87843137250000003" blue="0.87843137250000003" alpha="1" colorSpace="calibratedRGB"/>
                                 <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="Zgg-IZ-B9G">
                                     <size key="itemSize" width="168" height="151"/>
@@ -126,9 +127,8 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
                             <constraint firstAttribute="trailing" secondItem="km8-7q-Ar6" secondAttribute="trailing" id="0Uq-2V-wmu"/>
-                            <constraint firstItem="km8-7q-Ar6" firstAttribute="bottom" secondItem="lhs-fP-wga" secondAttribute="top" id="B1z-Rs-7ZH"/>
+                            <constraint firstItem="km8-7q-Ar6" firstAttribute="bottom" secondItem="lhs-fP-wga" secondAttribute="top" constant="-44" id="B1z-Rs-7ZH"/>
                             <constraint firstItem="km8-7q-Ar6" firstAttribute="top" secondItem="9mE-R0-P4v" secondAttribute="bottom" constant="180" id="BA1-x1-r3z"/>
-                            <constraint firstItem="lhs-fP-wga" firstAttribute="top" secondItem="1hh-gS-nGq" secondAttribute="bottom" constant="384" id="BvF-aT-9ha"/>
                             <constraint firstItem="1hh-gS-nGq" firstAttribute="top" secondItem="9mE-R0-P4v" secondAttribute="bottom" id="En0-ZW-eTY"/>
                             <constraint firstItem="32W-NX-1OH" firstAttribute="leading" secondItem="km8-7q-Ar6" secondAttribute="leading" id="GZj-al-4HL"/>
                             <constraint firstItem="1hh-gS-nGq" firstAttribute="leading" secondItem="1Sm-is-8FI" secondAttribute="leading" id="NF5-km-PKB"/>

@@ -14,14 +14,17 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
 
     @IBOutlet weak var mapView: MKMapView!
     
+    //get a refrence to the CoreDataStackManager singleton
     var sharedContext = CoreDataStackManager.sharedInstance().managedObjectContext!
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        //this function will return the map to it's last saved location
         restoreMapRegion(false)
         
         var error: NSError?
         
+        //this will fill the fetchedResultsController with all the pins stored in core data.
         fetchedResultsController.performFetch(&error)
         
         if let error = error {
@@ -31,10 +34,12 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
         
         fetchedResultsController.delegate = self
         
+        //finally, add all the annotations from the fetchedResultsController to the map
         addAnnotationsToMap()
         
     }
     
+    //define the fetchedResultsController. There is no need to sort the results, just define the entityName that will be searched for
     lazy var fetchedResultsController: NSFetchedResultsController = {
         let fetchRequest = NSFetchRequest(entityName: "Pin")
         
@@ -44,12 +49,14 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
         return fetchedResultsController
     } ()
 
+    //this is a simple helper variable for saving and getting the location of data (map center and zoom) persisted outside of the core data stack
     var filePath : String {
         let manager = NSFileManager.defaultManager()
         let url = manager.URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask).first as! NSURL
         return url.URLByAppendingPathComponent("mapRegionArchive").path!
     }
     
+    //this function stores the dictionary with the NSKeyedArchiver whenever it is called
     func saveMapRegion() {
         let dictionary = [
             "latitude" : mapView.region.center.latitude,
@@ -61,6 +68,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
         NSKeyedArchiver.archiveRootObject(dictionary, toFile: filePath)
     }
     
+    //this function looks up the dictionary of saveMapRegion using the NSKeyedUnarchiver and uses the entries to set the center and span of the map
     func restoreMapRegion(animated: Bool) {
         if let regionDictionar = NSKeyedUnarchiver.unarchiveObjectWithFile(filePath) as? [String: AnyObject] {
             let longitude = regionDictionar["longitude"] as! CLLocationDegrees
@@ -78,6 +86,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
         }
     }
     
+    //
     func mapView(mapView: MKMapView!, didSelectAnnotationView view: MKAnnotationView!) {
         let controller = self.storyboard!.instantiateViewControllerWithIdentifier("ImageCollectionView") as! ImageCollectionViewController
         let selectedPinCoordinate = view.annotation.coordinate
@@ -88,6 +97,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
             mapView.deselectAnnotation(id, animated: false)
         }
         
+        //fetch the updated results from Core Data, this make sure that all annotations are present
         var error: NSError?
         
         fetchedResultsController.performFetch(&error)
@@ -97,7 +107,9 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
             abort()
         }
         
+        //get the array of all stored pins
         var fetchedPins = self.fetchedResultsController.fetchedObjects as! [Pin]
+        //loop through all the pins and check if their coordiantes match the coordiante of the seleceted pin. If yes, then navigate to the ImageCollectionViewController.
         for pin in fetchedPins {
             if selectedPinCoordinate.latitude == pin.latitude && selectedPinCoordinate.longitude == pin.longitude {
                 controller.selectedPin = pin
@@ -155,7 +167,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
         }
     }
 
-
+    // this function adds a pin to the map if there is a long press, it then saves the pin to core data.
     @IBAction func longPress(sender: AnyObject) {
 
         if sender.state == UIGestureRecognizerState.Began {
@@ -172,7 +184,8 @@ class MapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsCo
             
         }
     }
-
+    
+    // this function saves the map whenever it changes, so it's easy to come back to!
     func mapView(mapView: MKMapView!, regionDidChangeAnimated animated: Bool) {
         saveMapRegion()
     }

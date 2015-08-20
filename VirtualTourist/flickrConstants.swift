@@ -9,6 +9,8 @@
 import Foundation
 
 extension flickr {
+    
+    /* this extention is stores structs of constatns that can be used elsewhere in the app */
     struct Constants {
         static let ApiKey = "2ff7aac0a5ad59e8b525b63af1c06be8"
         static let BaseURL = "https://api.flickr.com/services/rest/"

@@ -12,6 +12,7 @@ import MapKit
 
 class ImageCollectionViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, NSFetchedResultsControllerDelegate {
     
+    //these arrays will be used to keep track of which cells need to be deleted/updated
     var selectedIndexes = [NSIndexPath]()
     
     var insertedIndexPaths: [NSIndexPath]!
@@ -22,17 +23,19 @@ class ImageCollectionViewController: UIViewController, UICollectionViewDataSourc
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var bottomButton: UIBarButtonItem!
     
-    var cancelButton: UIBarButtonItem!
-    
+    // this is the variable for the pin that had been selected in the mapViewController. It was passed from there
     var selectedPin: Pin!
     
+    //get a refrence to the CoreDataStackManager singleton
     var sharedContext = CoreDataStackManager.sharedInstance().managedObjectContext!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        //this function sets the map view based on the selected pin
         setMapView()
         
+        //this will fill the fetchedResultsController with all the images stored in URL
         var error: NSError?
         fetchedResultsController.performFetch(&error)
         
@@ -40,15 +43,20 @@ class ImageCollectionViewController: UIViewController, UICollectionViewDataSourc
             println("Error performing initial fetch: \(error)")
         }
         
+        //this will make sure the bottom button is correctly labeled, but unavailable at first
         updateBottomButton()
+        if selectedPin.pictures.isEmpty {
+            bottomButton.enabled = false
+        }
         
-        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.Redo, target: self, action: "reloadView")
+        
     }
     
+    //define the fetchedResultsController. The sort doesn't matter as long as it is consistant, also define the entityName that will be searched for
     lazy var fetchedResultsController: NSFetchedResultsController = {
         
         let fetchRequest = NSFetchRequest(entityName: "Picture")
-        fetchRequest.sortDescriptors = []
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "picturePath", ascending: false)]
         fetchRequest.predicate = NSPredicate(format: "pin == %@", self.selectedPin)
         
         let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.sharedContext, sectionNameKeyPath: nil, cacheName: nil)
@@ -57,30 +65,17 @@ class ImageCollectionViewController: UIViewController, UICollectionViewDataSourc
         return fetchedResultsController
     } ()
     
+    //call the loadFromFlickr right before the viewcontroller gets presented
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         loadFromFlickr()
     }
-
     
-    func reloadView(){
-        var error: NSError?
-        fetchedResultsController.performFetch(&error)
-        
-        if let error = error {
-            println("Error performing initial fetch: \(error)")
-        }
-        
-       
-        self.collectionView.reloadData()
-        
-
-        println("collection reloaded")
-    }
-    
+    //this method checks if the pictures array stored in the pin is empty. If yes, it will use the getImagesFromFlickrBySearch method to get a dictionary of all the pitures
     func loadFromFlickr() {
         if selectedPin.pictures.isEmpty {
             
+            //method arguments needed for the flickr API
             let methodArguments = [
                 "method": flickr.Resources.METHOD_NAME,
                 "per_page": flickr.Resources.PER_PAGE,
@@ -99,7 +94,7 @@ class ImageCollectionViewController: UIViewController, UICollectionViewDataSourc
                     if let photos = JSONResults.valueForKey("photos") as? [String: AnyObject] {
                         if let photoDictionaries = photos["photo"] as? [[String :AnyObject]] {
                             
-                            
+                            //use the dictionary to create a bunch of picture objects and add them to the sharedContext
                             var photos = photoDictionaries.map() { (dictionary: [String: AnyObject]) -> Picture in
                                 let photo = Picture(dictionary: dictionary, context: self.sharedContext)
                                 
@@ -108,19 +103,11 @@ class ImageCollectionViewController: UIViewController, UICollectionViewDataSourc
                                 return photo
                             }
                             
-                            // Save the context
-                            self.saveContext()
-                            dispatch_async(dispatch_get_main_queue()){
-                                var error: NSError?
-                                self.fetchedResultsController.performFetch(&error)
+                            //once the picture urls are downloaded, make the bottom button enabled
+                            dispatch_async(dispatch_get_main_queue()) {
                                 
-                                if let error = error {
-                                    println("Error performing initial fetch: \(error)")
-                                }
-                                
-                                println(self.selectedPin.pictures.count)
+                                self.bottomButton.enabled = true
                             }
-              
                         }
                     }
                 }
@@ -128,6 +115,7 @@ class ImageCollectionViewController: UIViewController, UICollectionViewDataSourc
         }
     }
     
+    // this function will make sure the collection view is full of pictures that are square and 3 across.
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         
@@ -141,25 +129,29 @@ class ImageCollectionViewController: UIViewController, UICollectionViewDataSourc
         collectionView.collectionViewLayout = layout
     }
     
+    // this is a helper function simply for saving the context
     func saveContext(){
         CoreDataStackManager.sharedInstance().saveContext()
         println("context has been saved ...probably")
     }
-
+    
+    // this is a helper function that will take a dequed Picture cell instance, the indexPath and a picture insance and set it up with an image if available
     func configureCell(cell: PictureCell, atIndexPath indexPath: NSIndexPath, picture: Picture) {
         var pictureImage = UIImage(named: "posterPlaceHolder")
         
+        //set the image to the place holder image, make sure the activity indicator is visible and begin animating it
         cell.flickrPictureView.image = pictureImage
         cell.downloadIndicator.hidden = false
         cell.downloadIndicator.startAnimating()
         
+        // if the picture has been downloaded previously and stored in cache, then stop and hide the activity indicator and make the image visible
         if picture.pictureImage != nil {
             cell.flickrPictureView.image = picture.pictureImage
             cell.downloadIndicator.stopAnimating()
             cell.downloadIndicator.hidden = true
         } else {
             
-            // Start the task that will eventually download the image
+            // if the image hasn't been downloaded, start the task that will eventually download the image
             let task = flickr.sharedInstance().taskForImage(picture.picturePath) { data, error in
                 
                 if let error = error {
@@ -174,7 +166,6 @@ class ImageCollectionViewController: UIViewController, UICollectionViewDataSourc
                     picture.pictureImage = image
                     
                     // update the cell later, on the main thread
-                    
                     dispatch_async(dispatch_get_main_queue()) {
                         
                         cell.flickrPictureView.image = image
@@ -185,7 +176,7 @@ class ImageCollectionViewController: UIViewController, UICollectionViewDataSourc
             }
         }
         
-        
+        // this checks if the cell has been selected. if it has been, set it's opacity to a mere 50%
         if let index = find(selectedIndexes, indexPath) {
             cell.flickrPictureView.alpha = 0.5
         } else {
@@ -193,11 +184,12 @@ class ImageCollectionViewController: UIViewController, UICollectionViewDataSourc
         }
     }
     
-    /*
+    //set the number of sections availble, but set it to 0 if nothing is available
     func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
         return self.fetchedResultsController.sections?.count ?? 0
-    }*/
+    }
     
+    // get the numberOfItemsInSection from the fetchedResultsController
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         let sectionInfo = self.fetchedResultsController.sections![section] as! NSFetchedResultsSectionInfo
         
@@ -205,19 +197,21 @@ class ImageCollectionViewController: UIViewController, UICollectionViewDataSourc
         return sectionInfo.numberOfObjects
     }
     
-    
+    //deque a cell, configure it and return that cell
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
+        
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier("PictureCell", forIndexPath: indexPath) as! PictureCell
         
         let picture = self.fetchedResultsController.objectAtIndexPath(indexPath) as! Picture
         
-        println("a cell has been updated at \(picture.picturePath)")
+        //println("a cell has been updated at \(picture.picturePath)")
         
         self.configureCell(cell, atIndexPath: indexPath, picture: picture)
             
         return cell
     }
     
+    //if a cell is touched, add it to the index of cells selected, then udpate the cell, this will make it highlighted this time. Awesome, right?!
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
         
         let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PictureCell
@@ -235,7 +229,7 @@ class ImageCollectionViewController: UIViewController, UICollectionViewDataSourc
         updateBottomButton()
     }
     
-    // MARK: - Fetched Results Controller Delegate
+    // MATTHEW: - Fetched Results Controller Delegate
     
     // Whenever changes are made to Core Data the following three methods are invoked. This first method is used to create
     // three fresh arrays to record the index paths that will be changed.
@@ -300,6 +294,7 @@ class ImageCollectionViewController: UIViewController, UICollectionViewDataSourc
             
             for indexPath in self.insertedIndexPaths {
                 self.collectionView.insertItemsAtIndexPaths([indexPath])
+                println("batch update")
             }
             
             for indexPath in self.deletedIndexPaths {
@@ -311,9 +306,12 @@ class ImageCollectionViewController: UIViewController, UICollectionViewDataSourc
             }
             
             }, completion: nil)
+        
+        // this part is tricky. This saves the context any time there is a change made. Since I don't want a change to occur that isn't persisted, this seems like the best place to put it
+        saveContext()
     }
     
-
+    // when the button is picked, if there are any selected indexes, call deleteSelectedPhotos, otherwise delete all the pictures and start over
     @IBAction func bottomButtonClicked(sender: AnyObject) {
         
         if selectedIndexes.isEmpty {
@@ -324,41 +322,50 @@ class ImageCollectionViewController: UIViewController, UICollectionViewDataSourc
     }
     
     func deleteAllPhotos(){
-        
+        //delete all the photos in the fetcheResultsController
         for photo in fetchedResultsController.fetchedObjects as! [Picture] {
             sharedContext.deleteObject(photo)
         }
-        println(selectedPin.pictures.isEmpty)
+        
+        // this makes sure that the fetchedReusltsController will be empty before loadFromFlickr is called
+        saveContext()
+        
+        //make the bottom button unenabled until loadFromFlickr enables it at the appropriate time
+        bottomButton.enabled = false
         loadFromFlickr()
     }
     
     func deleteSelectedPhotos() {
         var photosToDelete = [Picture]()
         
+        //get the Picture objects at the locations in the selectedIndexes array and add them to the photosToDelete array
         for indexPath in selectedIndexes {
             photosToDelete.append(fetchedResultsController.objectAtIndexPath(indexPath) as! Picture)
         }
         
+        //delete all the Pictures in the photosToDelete array
         for photo in photosToDelete {
             sharedContext.deleteObject(photo)
         }
         
         saveContext()
         
+        //clear the selected indexes array with a new instance of the array
         selectedIndexes = [NSIndexPath]()
-        bottomButton.title = "New Collection"
+        updateBottomButton()
+        
     }
     
+    //set the title on the bottom button according to how many indexes have been selected
     func updateBottomButton(){
         if selectedIndexes.count > 0 {
             bottomButton.title = "Remove Selected Photos"
         } else {
             bottomButton.title = "New Collection"
         }
-        
-        //saveContext()
     }
     
+    //this function uses the selectedPin object to set the center of the map, add an annotation at the location and set an abitraty span. It also disables zoom, scroll and user interaction
     func setMapView() {
         let lat = CLLocationDegrees(selectedPin.latitude)
         let long = CLLocationDegrees(selectedPin.longitude)

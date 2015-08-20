@@ -13,6 +13,8 @@ private let SQLITE_FILE_NAME = "VirtualTourist.sqlite"
 
 class CoreDataStackManager {
    
+    /* Welcome to the CoreDataStackManager! there's noting of any praticular importance going on here, honestly. Just most of the normal stuff for core data. Have you checked out the MapViewController? It's much more exciting, or my personal favorite: the ImageCollectionViewController. It's a bit more... exciting! */
+    
     class func sharedInstance() -> CoreDataStackManager {
         struct Static {
             static let instance = CoreDataStackManager()

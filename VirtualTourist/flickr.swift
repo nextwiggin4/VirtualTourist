@@ -20,44 +20,9 @@ class flickr : NSObject {
     }
     
     
-    // MARK: - All purpose task method for data
+    // MATTHEW: - All purpose task method for data
     
-    func taskForResource(resource: String, parameters: [String : AnyObject], completionHandler: CompletionHander) -> NSURLSessionDataTask {
-        
-        var mutableParameters = parameters
-        var mutableResource = resource
-        
-        // Add in the API Key
-        mutableParameters["api_key"] = Constants.ApiKey
-        
-        // Substitute the id parameter into the resource
-        if resource.rangeOfString(":id") != nil {
-            assert(parameters[Keys.ID] != nil)
-            
-            mutableResource = mutableResource.stringByReplacingOccurrencesOfString(":id", withString: "\(parameters[Keys.ID]!)")
-            mutableParameters.removeValueForKey(Keys.ID)
-        }
-        
-        let urlString = Constants.BaseURL + mutableResource + flickr.escapedParameters(mutableParameters)
-        let url = NSURL(string: urlString)!
-        let request = NSURLRequest(URL: url)
-        
-        let task = session.dataTaskWithRequest(request) {data, response, downloadError in
-            
-            if let error = downloadError {
-                let newError = flickr.errorForData(data, response: response, error: error)
-                completionHandler(result: nil, error: downloadError)
-            } else {
-                flickr.parseJSONWithCompletionHandler(data, completionHandler: completionHandler)
-            }
-        }
-        
-        task.resume()
-        
-        return task
-    }
-    
-    /* Function makes first request to get a random page, then it makes a request to get an image with the random page */
+    /* Function makes first request to get the total number of possible pages, then picks a random page. It then makes a request to get the images on the random page */
     func getImagesFromFlickrBySearch(methodArguments: [String : AnyObject], completionHandler: CompletionHander) -> NSURLSessionDataTask {
         
         let session = NSURLSession.sharedSession()
@@ -96,6 +61,7 @@ class flickr : NSObject {
         return task
     }
     
+    /* This function retrieves the randomly selected page of photos and returns the parsed object containing all the photos url */
     func getImagesFromFlickrBySearchWithPage(methodArguments: [String : AnyObject], pageNumber: Int, completionHandler: CompletionHander) {
         
         /* Add the page to the method's arguments */
@@ -119,13 +85,14 @@ class flickr : NSObject {
         task.resume()
     }
     
-    // MARK: - All purpose task method for images
-
+    // MATTHEW: - All purpose task method for images
+    
+    /* this function will download the pictures from Flickr at the specified URL */
     func taskForImage(filePath: String, completionHandler: (imageData: NSData?, error: NSError?) ->  Void) -> NSURLSessionTask {
         
-        //let urlComponents = [filePath]
+        
         let baseURL = NSURL(string: filePath)!
-        let url = baseURL//.URLByAppendingPathComponent(size).URLByAppendingPathComponent(filePath)
+        let url = baseURL
         
         let request = NSURLRequest(URL: url)
         
@@ -144,10 +111,10 @@ class flickr : NSObject {
         return task
     }
     
-    // MARK: - Helpers
+    // MATTHEW: - Helpers
     
     
-    // Try to make a better error, based on the status_message from TheMovieDB. If we cant then return the previous error
+    // Try to make a better error, based on the status_message from flickr. If we cant then return the previous error
     
     class func errorForData(data: NSData?, response: NSURLResponse?, error: NSError) -> NSError {
         
@@ -200,7 +167,7 @@ class flickr : NSObject {
     }
     
     
-    // MARK: - Shared Instance
+    // MATTHEW: - Shared Instance
     
     class func sharedInstance() -> flickr {
         
@@ -211,7 +178,7 @@ class flickr : NSObject {
         return Singleton.sharedInstance
     }
     
-    // MARK: - Shared Date Formatter
+    // MATTHEW: - Shared Date Formatter
     
     class var sharedDateFormatter: NSDateFormatter  {
         
@@ -229,7 +196,7 @@ class flickr : NSObject {
         return Singleton.dateFormatter
     }
     
-    // MARK: - Shared Image Cache
+    // MATTHEW: - Shared Image Cache
     
     struct Caches {
         static let imageCache = ImageCache()
