@@ -38,16 +38,21 @@ class ImageCache {
     func storeImage(image: UIImage?, withIdentifier identifier: String) {
         let path = pathForIdentifier(identifier)
         
-        if image == nil{
-            inMemoryCache.removeObjectForKey(path)
-            NSFileManager.defaultManager().removeItemAtPath(path, error: nil)
-            return
-        }
         
         inMemoryCache.setObject(image!, forKey: path)
         
         let data = UIImagePNGRepresentation(image!)
         data.writeToFile(path, atomically: true)
+    }
+    
+    func removeImage(identifier: String) {
+        let path = pathForIdentifier(identifier)
+        
+        //this removes the object saved at the key value
+        inMemoryCache.removeObjectForKey(path)
+        println("call to remove item at path")
+
+        
     }
     
     //this function is a simple helper method that converts the image identifier to the path that it would be stored on the harddrive.

@@ -56,4 +56,9 @@ class Picture : NSManagedObject {
             flickr.Caches.imageCache.storeImage(newValue, withIdentifier: picturePath)
         }
     }
+    
+    override func prepareForDeletion() {
+        //before the object is deleted, it will call the removeImage function in the ImageCache class for the given path.
+        flickr.Caches.imageCache.removeImage(picturePath)
+    }
 }
